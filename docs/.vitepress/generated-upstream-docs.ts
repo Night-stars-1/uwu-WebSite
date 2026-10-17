@@ -107,6 +107,10 @@ export const upstreamDocsSidebars = [
       {
         "text": "概览",
         "link": "/docs/bringup-17/"
+      },
+      {
+        "text": "Recovery data 解密",
+        "link": "/docs/bringup-17/recovery-crypto"
       }
     ]
   },

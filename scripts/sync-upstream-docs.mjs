@@ -60,6 +60,26 @@ function addSiteOnlyUniChart(content) {
   )
 }
 
+function preserveSiteOnlyFiles(destinationRoot, relativeNames) {
+  const saved = new Map()
+
+  for (const name of relativeNames) {
+    const file = path.join(destinationRoot, name)
+    if (fs.existsSync(file)) saved.set(name, fs.readFileSync(file))
+  }
+
+  return saved
+}
+
+function restoreSiteOnlyFiles(destinationRoot, saved) {
+  for (const [name, content] of saved) {
+    const file = path.join(destinationRoot, name)
+    if (fs.existsSync(file)) continue
+    fs.mkdirSync(path.dirname(file), { recursive: true })
+    fs.writeFileSync(file, content)
+  }
+}
+
 function documentationAssets(directory) {
   const extensions = new Set(['.avif', '.gif', '.jpeg', '.jpg', '.png', '.svg', '.webp'])
 
@@ -163,9 +183,11 @@ function sidebarItems(sourceRoot, branch) {
         ? '文档'
         : branch === 'uwuBackGroundManager' && file === 'english.md'
           ? 'English'
-          : file === 'index.md'
-            ? '概览'
-            : content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? path.basename(file, '.md')
+          : file === 'recovery-crypto.md' && content.startsWith('# 新设备 Recovery data 解密适配流程')
+            ? 'Recovery data 解密'
+            : file === 'index.md'
+              ? '概览'
+              : content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? path.basename(file, '.md')
 
       return {
         text: title,
@@ -247,10 +269,16 @@ try {
         ]
       )
     } else {
+      const preserved = branch === 'bringup-17'
+        ? preserveSiteOnlyFiles(branchDestination, ['recovery-crypto.md'])
+        : new Map()
       replaceMarkdownDirectory(upstream, branchDestination)
       if (branch === 'uni') {
         const index = path.join(branchDestination, 'index.md')
         fs.writeFileSync(index, addSiteOnlyUniChart(fs.readFileSync(index, 'utf8')))
+      }
+      if (branch === 'bringup-17') {
+        restoreSiteOnlyFiles(branchDestination, preserved)
       }
     }
 
